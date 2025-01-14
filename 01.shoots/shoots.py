@@ -3,7 +3,6 @@ shoots.py
 Pygame demo simulating a shoot-em-up game
 """
 # TODO
-# convert xywh to the rect
 # collsion with masks
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
@@ -11,116 +10,139 @@ import pygame
 from pygame.locals import *
 import random
 import math
+from cmePygameColors import *
 
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-RED = (255, 0, 0)
-GREEN = ( 0,255, 0)
-BLUE = ( 0, 0,255)
-YELLOW = (255,255,  0)
-CYAN = (  0,255,255)
-MAGENTA = (255,  0,155)
-GREY = (127,127,127)
-PINK = (255,192,203)
-
+FIRE_EVENT = pygame.USEREVENT + 1
+BOGIE_FIRE_EVENT = pygame.USEREVENT + 2
 
 class Thing(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h, vx, vy):
         pygame.sprite.Sprite.__init__(self)
-        self._x = x
-        self._y = y
-        self._w = w
-        self._h = h
-        self._vx = vx
-        self._vy = vy
-        self._surf = pygame.Surface([w,h])
-        self._surf.fill(MAGENTA)
-        self._surf.set_colorkey(MAGENTA)
-        #self.rect = pygame.Rect(x, y, w, h)
-        self.rect = self._surf.get_rect()
-        self._alive = True
+        self.vx = vx
+        self.vy = vy
+        self.surf = pygame.Surface([w,h])
+        self.surf.fill(MAGENTA)
+        self.surf.set_colorkey(MAGENTA)
+        self.rect = self.surf.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.alive = True
 
     def draw(self, display):
-        if self._alive and self._surf:
-            display.blit(self._surf, (self._x, self._y))
+        if self.alive and self.surf:
+            #display.blit(self.surf, (self.rect.x, self.rect.y))
+            display.blit(self.surf, self.rect)
 
     def update(self):
-        self._x += self._vx
-        self._y += self._vy
-        self.rect = pygame.Rect(self._x, self._y, self._w, self._h)
-
-    def moveTo(self, x, y):
-        self._x = x
-        self._y = y
+        self.rect.x += self.vx
+        self.rect.y += self.vy
 
 class Ship(Thing):
     def __init__(self, x, y, w, h, vx, vy):
         super().__init__(x, y, w, h, vx, vy)
-        #pygame.draw.polygon(self._surf, (0,0,255), [(0, 0), (0,h), (w,h)], width=0)
-        pygame.draw.polygon(self._surf, BLUE, [(0,0), (0,h),(w/2,h/2)], width=0)
-        pygame.draw.line(self._surf, BLUE, (0,h/2),(w,h/2), width=3)
+        #pygame.draw.polygon(self.surf, (0,0,255), [(0, 0), (0,h), (w,h)], width=0)
+        pygame.draw.polygon(self.surf, BLUE, [(0,0), (0,h),(w/2,h/2)], width=0)
+        pygame.draw.line(self.surf, BLUE, (0,h/2),(w,h/2), width=3)
+        self.shotTimer = 0
+        self.shieldTimer = 30
 
     def update(self):
         r = random.random() 
         if r > 0.8  and r <= 0.85:
-            self._vy = -1
+            self.vy = -1
         elif r > 0.85 and r <= 0.90:
-            self._vy =  1
+            self.vy =  1
         elif r > 0.90:
-            self._vy = 0
-        self._x += self._vx
-        self._y += self._vy
-        if self._y < 100:
-            self._y = 100
-        if self._y > 300:
-            self._y = 300
-        self.rect = pygame.Rect(self._x, self._y, self._w, self._h)
+            self.vy = 0
+        self.rect.x += self.vx
+        self.rect.y += self.vy
+        if self.rect.y < 100:
+            self.rect.y = 100
+        if self.rect.y > 300:
+            self.rect.y = 300
+        if self.shotTimer <= 0:
+            self.triggerFire()
+            self.shotTimer = 30
+        else:
+            self.shotTimer -= 1
+        self.shieldTimer -= 1
 
     def fire(self):
-        return Torpedo(self._x, self._y, 10, 4, 10, self._vy)
+        return [Torpedo(self.rect.x+self.rect.w/2, self.rect.y+(self.rect.h/2),  5, 5, 10, -3, MEDIUMBLUE),
+                Torpedo(self.rect.x+self.rect.w/2, self.rect.y                ,  5, 5, 10, 0, MEDIUMBLUE),
+                Torpedo(self.rect.x+self.rect.w/2, self.rect.y+(self.rect.h  ),  5, 5, 10, 3, MEDIUMBLUE)]
 
+    def triggerFire(self):
+        event_data = {'message': 'Custom event triggered'}
+        my_event = pygame.event.Event(FIRE_EVENT, event_data)
+        pygame.event.post(my_event)
+
+    def draw(self, surf):
+        super().draw(surf)
+        if self.shieldTimer >= 0:
+            pygame.draw.circle(surf, BLUE,(self.rect.x+self.rect.w/2, self.rect.y+self.rect.h/2),(self.rect.w +self.rect.h)/2, width=1)
+
+    def shieldOn(self, t=-1):
+        self.shieldTimer = 30
 
 class Torpedo(Thing):
-    def __init__(self, x, y, w, h, vx, vy):
+    def __init__(self, x, y, w, h, vx, vy, clr=None):
         super().__init__(x, y, w, h, 0, 0)
-        self._surf.fill(RED)
-        self._vx = vx
-        self._vy = vy
+        if clr == None: clr = RED
+        self.surf.fill(clr)
+        self.vx = vx
+        self.vy = vy
     def update(self):
         super().update()
-        if self._alive and self._x > 640 or self._y < 0 or self._y > 400:
-            self._alive = False
-        self.rect = pygame.Rect(self._x, self._y, self._w, self._h)
+        if self.alive and self.rect.x > 640 or self.rect.x < 0 or self.rect.y < 0 or self.rect.y > 400:
+            self.alive = False
 
 class Bogie(Thing):
     def __init__(self, x, y, w, h):
         super().__init__(x, y, w, h, 0, 0)
         self.respawn()
-        self._x = x
-        self._y = y
-        pygame.draw.rect(self._surf, GREEN, pygame.Rect(w/2, 0, w/2, h))
-        pygame.draw.circle(self._surf, GREEN,(w/2,h/2),h/2) 
+        self.rect.x = x
+        self.rect.y = y
+        pygame.draw.circle(self.surf, LIME,(w/2,h/2),h/2) 
+        pygame.draw.rect(self.surf, GREEN, pygame.Rect(w/2, 0, w/2, h))
+        self.shotTimer = -1
+
     def respawn(self):
-        self._vx = -random.randint(1,6)
-        self._vy = 0
-        self._y = random.randint(50, 350)
-        self._yoff = self._y
-        self._x = 640+50
-        self._alive = True
+        self.vx = -random.randint(1,6)
+        self.vy = 0
+        self.rect.y = random.randint(50, 350)
+        self.yoff = self.rect.y
+        self.rect.x = 640+50
+        self.alive = True
         self._amp = random.randint(10, 80)
+
     def update(self):
-        if self._alive:
-            self._x += self._vx
-            self._y = self._amp * math.sin(self._x * 3.1415 / 90) + self._yoff
-            if self._x < -100: self._alive = False
+        if self.alive:
+            self.rect.x += self.vx
+            self.rect.y = self._amp * math.sin(self.rect.x * 3.1415 / 90) + self.yoff
+            if self.rect.x < -100: self.alive = False
         else:
             self.respawn()
-        self.rect = pygame.Rect(self._x, self._y, self._w, self._h)
+        #self.rect = pygame.Rect(self.rect.x, self.rect.y, self.rect.w, self.rect.h)
+        self.shotTimer -= 1
+        if self.shotTimer == 0:
+            self.triggerFire()
+        elif self.shotTimer < 0:
+            self.shotTimer = random.randint(10,60)
+
+    def triggerFire(self):
+        x = 639 if self.rect.x > 640 else self.rect.x
+        event_data = {'message': 'Bogie fire triggered', 
+                      'bogie': self,
+                      'x':x, 'y':self.rect.y}
+        my_event = pygame.event.Event(BOGIE_FIRE_EVENT, event_data)
+        pygame.event.post(my_event)
+
 
 class App:
     def __init__(self):
         self._running = True
-        self._surf = None
+        self.surf = None
         self.size = self.width, self.height = 640, 400
         self.things = None
         self.clock = pygame.time.Clock()
@@ -128,11 +150,12 @@ class App:
     def on_init(self):
         pygame.display.set_caption("Shoots")
         pygame.init()
-        self._surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self.surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
 
         self.grpShips = pygame.sprite.Group()
         self.grpTorps = pygame.sprite.Group() 
+        self.grpFlak = pygame.sprite.Group() 
         self.grpBogies = pygame.sprite.Group()
         self.grpThings = pygame.sprite.Group()
 
@@ -147,25 +170,31 @@ class App:
         self.grpThings.add(sprite)
         if group != None:
             group.add(sprite)
+        # if isinstance(group, list): group is a list of groups
 
     def on_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False
-        if event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self._running = False
-        if event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYUP:
             print ("key = ", event.key)
             if event.key == ord('n'):
                 print ("Bogies    :", len(self.grpBogies))
                 print ("Torps     :", len(self.grpTorps ))
-        if event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
+            #self.ship.shieldOn()
+        elif event.type == FIRE_EVENT:
             self.add_sprite2groups(self.ship.fire(), self.grpTorps)
-            self.add_sprite2groups(self.mouseFire(pos[0], pos[1]), self.grpTorps)
+        elif event.type == BOGIE_FIRE_EVENT:
+            self.add_sprite2groups(
+                Torpedo(event.x, event.y, 3, 3, -10, 0, YELLOW), self.grpFlak)
+
 
     def mouseFire(self, x, y):
-        return Torpedo(x, y, 20, 8, 10, 0)
+        return Torpedo(x, y,  5, 5, 10, 0)
     
     def on_loop(self):
         for thing in self.grpThings:
@@ -177,21 +206,27 @@ class App:
             if len(collides) > 0:
                 bogie.kill()
 
-
-        nbgn = len(self.grpTorps)
         for torp in self.grpTorps:
-            if not torp._alive:
+            if not torp.alive:
                 torp.kill()
-        nend = len(self.grpTorps)
-        #if nbgn != nend: print ("Torps = ", len(self.grpTorps))
+
+        if len(self.grpBogies) < 5:
+            self.add_sprite2groups(Bogie(680, random.randint(50,350), 20, 10), self.grpBogies)
+
+        # enemy torpodo detection
+        collides = pygame.sprite.spritecollide(self.ship, self.grpFlak, True)
+        if len(collides) > 0:
+            self.ship.shieldOn()
+        # enemy collision detection
+        collides = pygame.sprite.spritecollide(self.ship, self.grpBogies, True)
+        if len(collides) > 0:
+            self.ship.shieldOn()
 
 
     def on_render(self):
-        self._surf.fill((128,128,128))
-        #pygame.draw.rect(self._surf, (255,0,0),pygame.Rect(30,30, 60,60))
-        #for thing in self.things:
+        self.surf.fill(DIMGREY)
         for thing in self.grpThings:
-            thing.draw(self._surf)
+            thing.draw(self.surf)
         pygame.display.flip()
 
     def on_cleanup(self):

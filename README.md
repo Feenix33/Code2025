@@ -1,7 +1,8 @@
 Coding projects for 2025
 
-| Project | Type | Description |
-| ----- | ----- | ----- |
-| 01.shoots | pygame | Non-interactive pygame shoot-up demo |
-| 02.colors | python | Color database converter program |
-| 03.viewport | pygame | Attempt at multiple windows |
+| Project | Type | Description | Notes |
+| ----- | ----- | ----- | ----- |
+| 01.shoots | pygame | Non-interactive pygame shoot-up demo ||
+| 02.colors | python | Color database converter program ||
+| 03.viewport | pygame | Attempt at multiple windows | Stopped need design exp |
+| 04.bricks | pygame | Breaking bricks from udemy python class ||
