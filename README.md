@@ -4,3 +4,4 @@ Coding projects for 2025
 | ----- | ----- | ----- |
 | 01.shoots | pygame | Non-interactive pygame shoot-up demo |
 | 02.colors | python | Color database converter program |
+| 03.viewport | pygame | Attempt at multiple windows |
