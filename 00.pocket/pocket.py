@@ -2,6 +2,25 @@
 # Page View is
 # 7 6 5 4 (upside down)
 # 8 1 2 3
+# TODO:
+# pg 2-3 image spread
+# pg 4-5 image spread
+# pg 6-7 image spread
+# Notes section detection for recipe
+# No title detection recipe
+# help guide/manual
+# planner
+# planner for days of week
+# planner for days of week with dates
+# planner days of week w/sat sun combined and notes
+# storyboard / frame blank format
+# notebook page with lines
+# notebook page with grids
+# notebook page with dots
+# habit tracker for week
+# habit tracker for month
+# folding guides
+# document flow of the program
 
 """
 Printout is 

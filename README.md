@@ -7,3 +7,4 @@ Coding projects for 2025
 | 02.colors | python | Color database converter program ||
 | 03.viewport | pygame | Attempt at multiple windows | Stopped need design exp |
 | 04.bricks | pygame | Breaking bricks from udemy python class ||
+| 05.decor | pygame | Alt pattern for type rather than inherit ||
