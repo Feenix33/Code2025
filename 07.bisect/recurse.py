@@ -134,14 +134,15 @@ class WorldConfig:
     width = res * cols #400
     height = res * rows #300
     clrBackground = MAGENTA
-    clrCrayons = [GREY, YELLOW, BLUE, BROWN, GREEN]
+    #clrCrayons = [GREY, YELLOW, BLUE, RED, BROWN, GREEN]
+    clrCrayons = [GREY,BLACK,RED,ORANGE,YELLOW,WHITE,BLUE,VIOLET,GREEN]
     grid = None
 
     def __init__(self):
         WorldConfig.grid = [[0 for i in range(WorldConfig.cols)] 
                             for j in range (WorldConfig.rows)]
 
-def divide(grid, top, bottom, left, right, level):
+def divide00(grid, top, bottom, left, right, level):
     if level > 3: return
     if (right-left) < 7 or (bottom-top) < 7: return
     print ("Divide ", top, bottom, left, right, level)
@@ -172,6 +173,39 @@ def reset():
     WorldConfig.grid = [[0 for i in range(WorldConfig.cols)] 
                         for j in range (WorldConfig.rows)]
     divide(WorldConfig.grid, 0, WorldConfig.rows, 0, WorldConfig.cols, 1)
+
+def divide(grid, top, bottom, left, right, level):
+    if level > 3: return
+    if (right-left) < 10 or (bottom-top) < 10: return
+
+    if random.random() < 0.5:
+        third = int((bottom-top)/3)
+        splitAt = top + third + random.randint(0, third)
+        for n in range(left, right):
+            grid[splitAt][n] = level
+
+        doorAt = random.randint(1, int((right-left)/3)-1)
+        grid[splitAt][doorAt] = 0
+
+        doorAt = 2* int((right-left)/3) + random.randint(1, int((right-left)/3)-1)
+        grid[splitAt][doorAt] = 0
+
+        divide (grid, top, splitAt, left, right, level+1)
+        divide (grid, splitAt, bottom, left, right, level+1)
+    else:
+        third = int((right-left)/3)
+        splitAt = left + third + random.randint(0, third)
+        for n in range(top, bottom):
+            grid[n][splitAt] = level
+
+        doorAt = random.randint(1, int((bottom-top)/3)-1)
+        grid[doorAt][splitAt] = 0
+
+        doorAt = 2* int((bottom-top)/3) + random.randint(1, int((bottom-top)/3)-1)
+        grid[doorAt][splitAt] = 0
+
+        divide (grid, top, bottom, left, splitAt, level+1)
+        divide (grid, top, bottom, splitAt, right, level+1)
 
 #--------------------------------------------------------------------------------
 if __name__ == "__main__":
